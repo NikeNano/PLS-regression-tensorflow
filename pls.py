@@ -1,11 +1,12 @@
 import tensorflow as tf
 
-def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06,norm_y_weights=False):
+@tf.function
+def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06):
     y_score = Y
     x_weights_old = 0
     ite = 1
     X_pinv = Y_pinv = None
-    eps = 2.220446049250313e-16# np.finfo(X.dtype).eps
+    eps = tf.keras.backend.epsilon()
     # Inner loop of the Wold algo.
     while True:
         #1. Regress into X
@@ -31,3 +32,4 @@ def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06,norm_y_weights=False):
         x_weights_old = x_weights
         ite += 1
     return x_weights, y_weights, ite
+
