@@ -48,7 +48,7 @@ def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06,norm_y_weights=False):
         if ite == 1:
             warnings.warn('Maximum number of iterations reached',
                           ConvergenceWarning)
-        break
+            break
         x_weights_old = x_weights
         ite += 1
     return x_weights, y_weights, ite
