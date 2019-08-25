@@ -3,6 +3,22 @@ from abc import ABCMeta, abstractmethod
 
 @tf.function
 def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06,norm_y_weights=False):
+    """
+    The inner look of the nipals algorhtim 
+
+    input:
+        X               - tf.tensor,shape=(row,columns), the input features
+        Y               - tf.tensor, shape=(row,columsn), the dependent variable
+        max_itter       - int, the max number of itterations
+        tol             - float, the minimum tolerance needed to stop
+        norm_y_weights  - boolean, normalising the y_weights during each itteration
+    
+    output:
+        x_weights       -tf.tensor,shape(1,nbr of columns in X) the output weights
+        y_weights       -tf.tensor,shape(1,nbr of columns in X) the output weights
+        ite             -int, the number of itterations
+    """
+
     norm_y_weights = tf.convert_to_tensor(norm_y_weights)
     y_score = Y
     x_weights_old = tf.constant(0,shape=[X.shape[1],1],dtype='float64')
