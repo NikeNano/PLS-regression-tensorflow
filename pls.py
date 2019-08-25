@@ -43,7 +43,8 @@ def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06,norm_y_weights=False):
         # 2.2 Update y_score: the Y latent scores
         y_score = tf.matmul(Y,y_weights)/tf.matmul(tf.transpose(y_weights),y_weights)
         x_weights_diff = tf.math.subtract(x_weights,x_weights_old)
-        if tf.matmul(tf.transpose(x_weights_diff),x_weights_diff)[0][0] < tol:# or Y.shape[1] ==1:
+        # If we only have one dependent variable, lable we only need one itterations to solve it  
+        if tf.matmul(tf.transpose(x_weights_diff),x_weights_diff)[0][0] < tol or Y.shape[1] ==1:
             break
         if ite == 1:
             warnings.warn('Maximum number of iterations reached',
