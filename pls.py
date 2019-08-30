@@ -1,4 +1,6 @@
 import tensorflow as tf
+import tensorflow_probability as tfp
+from utils import check_is_fitted
 from abc import ABCMeta, abstractmethod
 
 @tf.function
@@ -110,12 +112,12 @@ class _PLS():
         Xk = X
         Yk = Y
         # Results matrices
-        self.x_scores_ = tf.zeros(shape=[n, self.n_components])
-        self.y_scores_ = tf.zeros(shape=[n, self.n_components])
-        self.x_weights_ = tf.zeros(shape=[p, self.n_components])
-        self.y_weights_ = tf.zeros(shape=[q, self.n_components])
-        self.x_loadings_ = tf.zeros(shape=[p, self.n_components])
-        self.y_loadings_ = tf.zeros(shape=[q, self.n_components])
+        #self.x_scores_ = tf.zeros(shape=[n, self.n_components])
+        #self.y_scores_ = tf.zeros(shape=[n, self.n_components])
+        #self.x_weights_ = tf.zeros(shape=[p, self.n_components])
+        #self.y_weights_ = tf.zeros(shape=[q, self.n_components])
+        #self.x_loadings_ = tf.zeros(shape=[p, self.n_components])
+        #self.y_loadings_ = tf.zeros(shape=[q, self.n_components])
         self.n_iter_ = []
 
         # NIPALS algo: outer loop, over components
@@ -188,28 +190,48 @@ class _PLS():
 #             self.y_weights_[:, k] = y_weights.ravel()  # C
 #             self.x_loadings_[:, k] = x_loadings.ravel()  # P
 #             self.y_loadings_[:, k] = y_loadings.ravel()  # Q
-            self.x_scores_[:, k] = tf.reshape(x_scores, [-1])  # T
-            self.y_scores_[:, k] = tf.reshape(y_scores, [-1]) # U
-            self.x_weights_[:, k] = tf.reshape(x_weights, [-1])  # W
-            self.y_weights_[:, k] = tf.reshape(y_weights, [-1]) # C
-            self.x_loadings_[:, k] = tf.reshape(x_loadings, [-1])  # P
-            self.y_loadings_[:, k] = tf.reshape(y_loadings, [-1])  # Q
+            x_scores = tf.dtypes.cast(x_scores,tf.float32)
+            y_scores = tf.dtypes.cast(y_scores,tf.float32)
+            x_weights = tf.dtypes.cast(x_weights,tf.float32)
+            y_weights = tf.dtypes.cast(y_weights,tf.float32)
+            x_loadings = tf.dtypes.cast(x_loadings,tf.float32)
+            y_loadings = tf.dtypes.cast(y_loadings,tf.float32)
+            try:              
+                self.x_scores_  = tf.concat([self.x_scores_, tf.squeeze(x_scores)[:, None]], -1)
+                self.y_scores_  = tf.concat([self.y_scores_, tf.squeeze(y_scores)[:, None]], -1)
+                self.x_weights_  = tf.concat([self.x_weights_, tf.squeeze(x_weights)[:, None]], -1)
+                self.y_weights_  = tf.concat([self.y_weights_, tf.rehape(y_weights,shape=(1))[:, None]], -1)
+                self.x_loadings_  = tf.concat([self.x_loadings_, tf.squeeze(x_loadings)[:, None]], -1)
+                self.y_loadings_  = tf.concat([self.y_loadings_, tf.squeeze(y_loadings)[:, None]], -1)
+            except AttributeError as e:
+                self.x_scores_ = x_scores
+                self.y_scores_ = y_scores
+                self.x_weights_ = x_weights
+                self.y_weights_ = y_weights
+                self.x_loadings_ = x_loadings
+                self.y_loadings_ = y_loadings
+            #self.x_scores_ = tf.reshape(x_scores, [-1])  # T
+            #self.y_scores_[:, k] = tf.reshape(y_scores, [-1]) # U
+            #self.x_weights_[:, k] = tf.reshape(x_weights, [-1])  # W
+            #self.y_weights_[:, k] = tf.reshape(y_weights, [-1]) # C
+            #self.x_loadings_[:, k] = tf.reshape(x_loadings, [-1])  # P
+            #self.y_loadings_[:, k] = tf.reshape(y_loadings, [-1])  # Q
         # Such that: X = TP' + Err and Y = UQ' + Err
 
         # 4) rotations from input space to transformed space (scores)
         # T = X W(P'W)^-1 = XW* (W* : p x k matrix)
         # U = Y C(Q'C)^-1 = YC* (W* : q x k matrix)
-        self.x_rotations_ = np.dot(
+        self.x_rotations_ = tf.matmul(
             self.x_weights_,
-            pinv2(np.dot(self.x_loadings_.T, self.x_weights_),
-                  check_finite=False))
+            tfp.math.pinv(tf.matmul(tf.transpose(self.x_loadings_), self.x_weights_)))
+        
         if Y.shape[1] > 1:
             self.y_rotations_ = np.dot(
                 self.y_weights_,
                 pinv2(np.dot(self.y_loadings_.T, self.y_weights_),
                       check_finite=False))
         else:
-            self.y_rotations_ = np.ones(1)
+            self.y_rotations_ = tf.ones(1)
 
         if True or self.deflation_mode == "regression":
             # FIXME what's with the if?
@@ -219,8 +241,9 @@ class _PLS():
             # Then express in function of X
             # Y = X W(P'W)^-1Q' + Err = XB + Err
             # => B = W*Q' (p x q)
-            self.coef_ = np.dot(self.x_rotations_, self.y_loadings_.T)
-            self.coef_ = self.coef_ * self.y_std_
+            self.coef_ = tf.matmul(self.x_rotations_, tf.transpose(self.y_loadings_))
+            
+            self.coef_ = tf.dtypes.cast(self.coef_,tf.float32) * tf.dtypes.cast(self.y_std_,tf.float32)
         return self
 
     def transform(self, X, Y=None, copy=True):
@@ -239,20 +262,25 @@ class _PLS():
         -------
         x_scores if Y is not given, (x_scores, y_scores) otherwise.
         """
-        check_is_fitted(self)
-        X = check_array(X, copy=copy, dtype=FLOAT_DTYPES)
+        
+        check_is_fitted(self, 'x_mean_')
+        #[TODO] fix this later, needs more work ...
+        #X = check_array(X, copy=copy, dtype=FLOAT_DTYPES)
         # Normalize
         X -= self.x_mean_
         X /= self.x_std_
         # Apply rotation
-        x_scores = np.dot(X, self.x_rotations_)
+    
+        print(self.x_rotations_)
+        x_scores = tf.matmul(tf.dtypes.cast(X,tf.float32), tf.dtypes.cast(self.x_rotations_,tf.float32))
         if Y is not None:
-            Y = check_array(Y, ensure_2d=False, copy=copy, dtype=FLOAT_DTYPES)
+            #[TODO] fix this later, needs more work ...
+            #Y = check_array(Y, ensure_2d=False, copy=copy, dtype=FLOAT_DTYPES)
             if Y.ndim == 1:
-                Y = Y.reshape(-1, 1)
+                Y = tf.reshape(Y,shape=(-1, 1))
             Y -= self.y_mean_
             Y /= self.y_std_
-            y_scores = np.dot(Y, self.y_rotations_)
+            y_scores = tf.tensordot(tf.dtypes.cast(Y,tf.float32), tf.dtypes.cast(self.y_rotations_,tf.float32),axes=0)
             return x_scores, y_scores
 
         return x_scores
@@ -297,7 +325,8 @@ class _PLS():
 
     def _more_tags(self):
         return {'poor_score': True}
-    
+                                                                           
+
     
 class PLSRegression(_PLS):
     def __init__(self, n_components=2, scale=True,
