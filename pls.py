@@ -4,7 +4,7 @@ import tensorflow_probability as tfp
 from abc import ABCMeta, abstractmethod
 
 @tf.function
-def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06,norm_y_weights=False):
+def _nipals_tensorflow(X:tf.tensor,Y:tf.tensor, max_iter=500, tol=1e-06,norm_y_weights:bool=False)-> tf.tensor,tf.tensor,int:
     """
     The inner look of the nipals algorhtim 
 
@@ -59,7 +59,7 @@ def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06,norm_y_weights=False):
 
 
 
-def _center_scale_xy(X, Y, scale=True):
+def _center_scale_xy(X:tf.tensor, Y:tf.tensor, scale=True)-> tf.tensor,tf.tensor,tf.tensor,tf.tensor,tf.tensor,tf.tensor:
     """ Center X, Y and scale if the scale parameter==True
     Returns
     -------
@@ -100,7 +100,7 @@ class _PLS():
         self.tol = tol
         self.copy = copy
 
-    def fit(self, X, Y):
+    def fit(self, X:tf.tensor, Y:tf.tensor)->_PLS: #does this work?
         n = X.shape[0]
         p = X.shape[1]
         q = Y.shape[1]
@@ -260,7 +260,7 @@ class _PLS():
             self.coef_ = tf.dtypes.cast(self.coef_,tf.float32) * tf.dtypes.cast(self.y_std_,tf.float32)
         return self
 
-    def transform(self, X, Y=None, copy=True):
+    def transform(self, X:tf.tensor, Y:tf.tensor=None, copy=True)->tf.tensor,tf.tensor:
         """Apply the dimension reduction learned on the train data.
         Parameters
         ----------
@@ -297,7 +297,7 @@ class _PLS():
 
         return x_scores
 
-    def predict(self, X, copy=True):
+    def predict(self, X:tf.tensor, copy=True)-> tf.tensor:
         """Apply the dimension reduction learned on the train data.
         Parameters
         ----------
@@ -319,7 +319,7 @@ class _PLS():
         Ypred = np.dot(X, self.coef_)
         return Ypred + self.y_mean_
 
-    def fit_transform(self, X, y=None):
+    def fit_transform(self, X:tf.tensor, y:tf.tensor=None):
         """Learn and apply the dimension reduction on the train data.
         Parameters
         ----------
