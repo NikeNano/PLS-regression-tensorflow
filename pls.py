@@ -1,6 +1,6 @@
 import tensorflow as tf
 import tensorflow_probability as tfp
-from utils import check_is_fitted
+#from utils import check_is_fitted
 from abc import ABCMeta, abstractmethod
 
 @tf.function
@@ -105,6 +105,13 @@ class _PLS():
         p = X.shape[1]
         q = Y.shape[1]
         
+        self.x_scores_ = []
+        self.y_scores_ = []
+        self.x_weights_ = []
+        self.y_weights_ = []
+        self.x_loadings_ = []
+        self.y_loadings_ = []
+
         # Scale (in place)
         X, Y, self.x_mean_, self.y_mean_, self.x_std_, self.y_std_ = (
             _center_scale_xy(X, Y, self.scale))
@@ -195,14 +202,15 @@ class _PLS():
             x_weights = tf.dtypes.cast(x_weights,tf.float32)
             y_weights = tf.dtypes.cast(y_weights,tf.float32)
             x_loadings = tf.dtypes.cast(x_loadings,tf.float32)
+            print(x_loadings.shape)
             y_loadings = tf.dtypes.cast(y_loadings,tf.float32)
             try:              
-                self.x_scores_  = tf.concat([self.x_scores_, tf.squeeze(x_scores)[:, None]], -1)
-                self.y_scores_  = tf.concat([self.y_scores_, tf.squeeze(y_scores)[:, None]], -1)
-                self.x_weights_  = tf.concat([self.x_weights_, tf.squeeze(x_weights)[:, None]], -1)
-                self.y_weights_  = tf.concat([self.y_weights_, tf.rehape(y_weights,shape=(1))[:, None]], -1)
-                self.x_loadings_  = tf.concat([self.x_loadings_, tf.squeeze(x_loadings)[:, None]], -1)
-                self.y_loadings_  = tf.concat([self.y_loadings_, tf.squeeze(y_loadings)[:, None]], -1)
+                self.x_scores_.append(x_scores)
+                self.y_scores_.append(y_scores)
+                self.x_weights_.append(x_weights)
+                self.y_weights_.append(y_weights)
+                self.x_loadings_.append(x_loadings)
+                self.y_loadings_.append(y_loadings)
             except AttributeError as e:
                 self.x_scores_ = x_scores
                 self.y_scores_ = y_scores
@@ -210,13 +218,19 @@ class _PLS():
                 self.y_weights_ = y_weights
                 self.x_loadings_ = x_loadings
                 self.y_loadings_ = y_loadings
-            #self.x_scores_ = tf.reshape(x_scores, [-1])  # T
-            #self.y_scores_[:, k] = tf.reshape(y_scores, [-1]) # U
-            #self.x_weights_[:, k] = tf.reshape(x_weights, [-1])  # W
-            #self.y_weights_[:, k] = tf.reshape(y_weights, [-1]) # C
-            #self.x_loadings_[:, k] = tf.reshape(x_loadings, [-1])  # P
-            #self.y_loadings_[:, k] = tf.reshape(y_loadings, [-1])  # Q
         # Such that: X = TP' + Err and Y = UQ' + Err
+        self.x_scores_ = tf.stack(self.x_scores_,axis=1)
+        self.x_scores_ = tf.reshape(self.x_scores_,shape=self.x_scores_.shape[:2])
+        self.y_scores_ = tf.stack(self.y_scores_,axis=1)
+        self.y_scores_ = tf.reshape(self.y_scores_,shape=self.y_scores_.shape[:2])
+        self.x_weights_ = tf.stack(self.x_weights_,axis=1)
+        self.x_weights_ = tf.reshape(self.x_weights_,shape=self.x_weights_.shape[:2])
+        self.y_weights_ = tf.stack(self.y_weights_,axis=1)
+        self.y_weights_ = tf.reshape(self.y_weights_,shape=self.y_weights_.shape[:2])
+        self.x_loadings_ = tf.stack(self.x_loadings_,axis=1)
+        self.x_loadings_ = tf.reshape(self.x_loadings_,shape=self.x_loadings_.shape[:2])
+        self.y_loadings_ = tf.stack(self.y_loadings_,axis=1)
+        self.y_loadings_ = tf.reshape(self.y_loadings_,shape=self.y_loadings_.shape[:2])
 
         # 4) rotations from input space to transformed space (scores)
         # T = X W(P'W)^-1 = XW* (W* : p x k matrix)
@@ -263,15 +277,13 @@ class _PLS():
         x_scores if Y is not given, (x_scores, y_scores) otherwise.
         """
         
-        check_is_fitted(self, 'x_mean_')
+        #check_is_fitted(self, 'x_mean_')
         #[TODO] fix this later, needs more work ...
         #X = check_array(X, copy=copy, dtype=FLOAT_DTYPES)
         # Normalize
         X -= self.x_mean_
         X /= self.x_std_
         # Apply rotation
-    
-        print(self.x_rotations_)
         x_scores = tf.matmul(tf.dtypes.cast(X,tf.float32), tf.dtypes.cast(self.x_rotations_,tf.float32))
         if Y is not None:
             #[TODO] fix this later, needs more work ...
@@ -299,7 +311,7 @@ class _PLS():
         This call requires the estimation of a p x q matrix, which may
         be an issue in high dimensional space.
         """
-        check_is_fitted(self)
+        #check_is_fitted(self)
         X = check_array(X, copy=copy, dtype=FLOAT_DTYPES)
         # Normalize
         X -= self.x_mean_
