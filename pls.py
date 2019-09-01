@@ -4,7 +4,7 @@ from utils import check_is_fitted
 from abc import ABCMeta, abstractmethod
 
 @tf.function
-def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06,norm_y_weights=False):
+def _nipals_tensorflow(X:tf.tensor,Y:tf.tensor, max_iter=500, tol=1e-06,norm_y_weights:bool=False)-> tf.tensor,tf.tensor,int:
     """
     The inner look of the nipals algorhtim 
 
@@ -59,7 +59,7 @@ def _nipals_tensorflow(X,Y, max_iter=500, tol=1e-06,norm_y_weights=False):
 
 
 
-def _center_scale_xy(X, Y, scale=True):
+def _center_scale_xy(X:tf.tensor, Y:tf.tensor, scale=True)-> tf.tensor,tf.tensor,tf.tensor,tf.tensor,tf.tensor,tf.tensor:
     """ Center X, Y and scale if the scale parameter==True
     Returns
     -------
