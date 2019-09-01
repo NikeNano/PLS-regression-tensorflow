@@ -4,20 +4,20 @@ import tensorflow_probability as tfp
 from abc import ABCMeta, abstractmethod
 
 @tf.function
-def _nipals_tensorflow(X:tf.tensor,Y:tf.tensor, max_iter=500, tol=1e-06,norm_y_weights:bool=False)-> tf.tensor,tf.tensor,int:
+def _nipals_tensorflow(X:tf.Tensor,Y:tf.Tensor, max_iter=500, tol=1e-06,norm_y_weights:bool=False):
     """
     The inner look of the nipals algorhtim 
 
     input:
-        X               - tf.tensor,shape=(row,columns), the input features
-        Y               - tf.tensor, shape=(row,columsn), the dependent variable
+        X               - tf.Tensor,shape=(row,columns), the input features
+        Y               - tf.Tensor, shape=(row,columsn), the dependent variable
         max_itter       - int, the max number of itterations
         tol             - float, the minimum tolerance needed to stop
         norm_y_weights  - boolean, normalising the y_weights during each itteration
     
     output:
-        x_weights       -tf.tensor,shape(1,nbr of columns in X) the output weights
-        y_weights       -tf.tensor,shape(1,nbr of columns in X) the output weights
+        x_weights       -tf.Tensor,shape(1,nbr of columns in X) the output weights
+        y_weights       -tf.Tensor,shape(1,nbr of columns in X) the output weights
         ite             -int, the number of itterations
     """
 
@@ -59,7 +59,7 @@ def _nipals_tensorflow(X:tf.tensor,Y:tf.tensor, max_iter=500, tol=1e-06,norm_y_w
 
 
 
-def _center_scale_xy(X:tf.tensor, Y:tf.tensor, scale=True)-> tf.tensor,tf.tensor,tf.tensor,tf.tensor,tf.tensor,tf.tensor:
+def _center_scale_xy(X:tf.Tensor, Y:tf.Tensor, scale=True):
     """ Center X, Y and scale if the scale parameter==True
     Returns
     -------
@@ -100,7 +100,7 @@ class _PLS():
         self.tol = tol
         self.copy = copy
 
-    def fit(self, X:tf.tensor, Y:tf.tensor)->_PLS: #does this work?
+    def fit(self, X:tf.Tensor, Y:tf.Tensor): #does this work?
         n = X.shape[0]
         p = X.shape[1]
         q = Y.shape[1]
@@ -202,22 +202,13 @@ class _PLS():
             x_weights = tf.dtypes.cast(x_weights,tf.float32)
             y_weights = tf.dtypes.cast(y_weights,tf.float32)
             x_loadings = tf.dtypes.cast(x_loadings,tf.float32)
-            print(x_loadings.shape)
             y_loadings = tf.dtypes.cast(y_loadings,tf.float32)
-            try:              
-                self.x_scores_.append(x_scores)
-                self.y_scores_.append(y_scores)
-                self.x_weights_.append(x_weights)
-                self.y_weights_.append(y_weights)
-                self.x_loadings_.append(x_loadings)
-                self.y_loadings_.append(y_loadings)
-            except AttributeError as e:
-                self.x_scores_ = x_scores
-                self.y_scores_ = y_scores
-                self.x_weights_ = x_weights
-                self.y_weights_ = y_weights
-                self.x_loadings_ = x_loadings
-                self.y_loadings_ = y_loadings
+            self.x_scores_.append(x_scores)
+            self.y_scores_.append(y_scores)
+            self.x_weights_.append(x_weights)
+            self.y_weights_.append(y_weights)
+            self.x_loadings_.append(x_loadings)
+            self.y_loadings_.append(y_loadings)
         # Such that: X = TP' + Err and Y = UQ' + Err
         self.x_scores_ = tf.stack(self.x_scores_,axis=1)
         self.x_scores_ = tf.reshape(self.x_scores_,shape=self.x_scores_.shape[:2])
@@ -260,7 +251,7 @@ class _PLS():
             self.coef_ = tf.dtypes.cast(self.coef_,tf.float32) * tf.dtypes.cast(self.y_std_,tf.float32)
         return self
 
-    def transform(self, X:tf.tensor, Y:tf.tensor=None, copy=True)->tf.tensor,tf.tensor:
+    def transform(self, X:tf.Tensor, Y:tf.Tensor=None, copy=True):
         """Apply the dimension reduction learned on the train data.
         Parameters
         ----------
@@ -297,7 +288,7 @@ class _PLS():
 
         return x_scores
 
-    def predict(self, X:tf.tensor, copy=True)-> tf.tensor:
+    def predict(self, X:tf.Tensor, copy=True)-> tf.Tensor:
         """Apply the dimension reduction learned on the train data.
         Parameters
         ----------
@@ -312,14 +303,15 @@ class _PLS():
         be an issue in high dimensional space.
         """
         #check_is_fitted(self)
-        X = check_array(X, copy=copy, dtype=FLOAT_DTYPES)
+        #X = check_array(X, copy=copy, dtype=FLOAT_DTYPES)
         # Normalize
         X -= self.x_mean_
         X /= self.x_std_
-        Ypred = np.dot(X, self.coef_)
+        #Ypred = np.dot(X, self.coef_)
+        Ypred = tf.matmul(X,self.coef_)
         return Ypred + self.y_mean_
 
-    def fit_transform(self, X:tf.tensor, y:tf.tensor=None):
+    def fit_transform(self, X:tf.Tensor, y:tf.Tensor=None):
         """Learn and apply the dimension reduction on the train data.
         Parameters
         ----------
