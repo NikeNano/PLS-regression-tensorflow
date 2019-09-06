@@ -85,34 +85,34 @@ def test_tensorflow_pls_speed_X_10():
 #    assert True
     
     
-#def test_sklearn_pls_speed_step():
-#    LOGGER.info('Performance test sklearn standard iris')
-#    X_x = np.copy(X)
-#    Y_x = np.copy(Y)
-#    run_time = []
-#    for i in range(10):
-#        X_x = np.concatenate((X_x, X_x), axis=1)
-#        Y_x = np.concatenate((Y_x, Y_x), axis=0)
-#        def pls_speed(): 
-#            plsSKLEARN = PLSRegression()
-#            plsSKLEARN.fit(X_x,Y_x)
-#        run_time.append((timeit.timeit(pls_speed, number = 10)))
-#    LOGGER.info("Sklearn pls run times :{} s".format(run_time))
-#    assert True
+def test_sklearn_pls_speed_step():
+    LOGGER.info('Performance test sklearn standard iris')
+    X_x = np.copy(X)
+    Y_x = np.copy(Y)
+    run_time = []
+    for i in range(10):
+        X_x = np.concatenate((X_x, X_x), axis=1)
+        Y_x = np.concatenate((Y_x, Y_x), axis=0)
+        def pls_speed(): 
+            plsSKLEARN = PLSRegression()
+            plsSKLEARN.fit(X_x,Y_x)
+        run_time.append((timeit.timeit(pls_speed, number = 10)))
+    LOGGER.info("Sklearn pls run times :{} s".format(run_time))
+    assert True
     
-#def test_tensorflow_pls_speed_step():
-#    LOGGER.info('Performance test sklearn standard iris')
-#    X_x = np.copy(X)
-#    Y_x = np.copy(Y)
-#    run_time = []
-#    for i in range(10):
-#        X_x = tf.convert_to_tensor(np.concatenate((X_x, X_x), axis=1),dtype=tf.float64)
-#        Y_x = tf.convert_to_tensor(np.concatenate((Y_x, Y_x), axis=0),dtype=tf.float64)
-#        Xt_x = tf.convert_to_tensor(np.copy(X_x),dtype=tf.float64)
-#        Yt_x = tf.convert_to_tensor(np.copy(Y_x),dtype=tf.float64)
-#        def pls_speed(): 
-#            plsTENSORFLOW = PLSRegression()
-#            plsTENSORFLOW = plsTENSORFLOW.fit(Xt_x,Yt_x)
-#        run_time.append((timeit.timeit(pls_speed, number = 10)))
-#    LOGGER.info("Sklearn pls run times :{} s".format(run_time))
-#    assert True
+def test_tensorflow_pls_speed_step():
+    LOGGER.info('Performance test sklearn standard iris')
+    X_x = np.copy(X)
+    Y_x = np.copy(Y)
+    run_time = []
+    for i in range(10):
+        X_x = tf.convert_to_tensor(np.concatenate((X_x, X_x), axis=1),dtype=tf.float64)
+        Y_x = tf.convert_to_tensor(np.concatenate((Y_x, Y_x), axis=0),dtype=tf.float64)
+        Xt_x = tf.convert_to_tensor(np.copy(X_x),dtype=tf.float64)
+        Yt_x = tf.convert_to_tensor(np.copy(Y_x),dtype=tf.float64)
+        def pls_speed(): 
+            plsTENSORFLOW = PLSRegression()
+            plsTENSORFLOW = plsTENSORFLOW.fit(Xt_x,Yt_x)
+        run_time.append((timeit.timeit(pls_speed, number = 10)))
+    LOGGER.info("Sklearn pls run times :{} s".format(run_time))
+    assert True

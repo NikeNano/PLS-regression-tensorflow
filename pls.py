@@ -133,7 +133,7 @@ class _PLS:
         Xk = X
         Yk = Y
         # Results matrices
-        # self.x_scores_ = tf.zeros(shape=[n, self.n_components])
+        x_scores_test = tf.zeros(shape=[n, self.n_components],dtype=tf.float32)
         # self.y_scores_ = tf.zeros(shape=[n, self.n_components])
         # self.x_weights_ = tf.zeros(shape=[p, self.n_components])
         # self.y_weights_ = tf.zeros(shape=[q, self.n_components])
@@ -222,12 +222,18 @@ class _PLS:
             #             y_weights = tf.dtypes.cast(y_weights,tf.float32)
             #             x_loadings = tf.dtypes.cast(x_loadings,tf.float32)
             #             y_loadings = tf.dtypes.cast(y_loadings,tf.float32)
+            #print(x_scores)
+            #print(x_scores.shape)
             self.x_scores_.append(x_scores)
             self.y_scores_.append(y_scores)
             self.x_weights_.append(x_weights)
             self.y_weights_.append(y_weights)
             self.x_loadings_.append(x_loadings)
             self.y_loadings_.append(y_loadings)
+            x_scores_test = tf.cast(x_scores_test,dtype=tf.float32)
+            x_scores = tf.cast(x_scores,dtype=tf.float32)
+            x_scores_test = tf.compat.v2.tensor_scatter_nd_add(x_scores_test, tf.constant([k]), x_scores)
+            print(x_scores_test)
         # Such that: X = TP' + Err and Y = UQ' + Err
         self.x_scores_ = tf.stack(self.x_scores_, axis=1)
         self.x_scores_ = tf.reshape(self.x_scores_, shape=self.x_scores_.shape[:2])
