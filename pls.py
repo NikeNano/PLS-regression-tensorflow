@@ -4,7 +4,7 @@ import tensorflow_probability as tfp
 # from utils import check_is_fitted
 from abc import ABCMeta, abstractmethod
 
-
+@tf.function
 def _nipals_tensorflow(
     X: tf.Tensor, Y: tf.Tensor, max_iter=500, tol=1e-06, norm_y_weights: bool = False
 ):
@@ -56,7 +56,7 @@ def _nipals_tensorflow(
         if tf.matmul(tf.transpose(x_weights_diff), x_weights_diff)[0][0] < tol or Y.shape[1] == 1:
             break
         if ite == max_iter:
-            #warnings.warn("Maximum number of iterations reached", ConvergenceWarning)
+            warnings.warn("Maximum number of iterations reached", ConvergenceWarning)
             break
         x_weights_old = x_weights
         ite += 1
@@ -112,8 +112,8 @@ class _PLS:
         self.max_iter = max_iter
         self.tol = tol
         self.copy = copy
-        
-    #@tf.function
+
+
     def fit(self, X: tf.Tensor, Y: tf.Tensor):  # does this work?
         n = X.shape[0]
         p = X.shape[1]
@@ -134,12 +134,12 @@ class _PLS:
         Xk = X
         Yk = Y
         # Results matrices
-        self.x_scores_ = tf.zeros(shape=[n, self.n_components],dtype=tf.float32)
-        self.y_scores_ = tf.zeros(shape=[n, self.n_components])
-        self.x_weights_ = tf.zeros(shape=[p, self.n_components])
-        self.y_weights_ = tf.zeros(shape=[q, self.n_components])
-        self.x_loadings_ = tf.zeros(shape=[p, self.n_components])
-        self.y_loadings_ = tf.zeros(shape=[q, self.n_components])
+        # self.x_scores_ = tf.zeros(shape=[n, self.n_components])
+        # self.y_scores_ = tf.zeros(shape=[n, self.n_components])
+        # self.x_weights_ = tf.zeros(shape=[p, self.n_components])
+        # self.y_weights_ = tf.zeros(shape=[q, self.n_components])
+        # self.x_loadings_ = tf.zeros(shape=[p, self.n_components])
+        # self.y_loadings_ = tf.zeros(shape=[q, self.n_components])
         self.n_iter_ = []
 
         # NIPALS algo: outer loop, over components
@@ -179,7 +179,6 @@ class _PLS:
             y_scores = tf.matmul(Yk, y_weights) / y_ss
             # test for null variance
             if tf.matmul(tf.transpose(x_scores), x_scores) < Y_eps:
-                #warnings.warn("X scores are null at iteration %s" % k)
                 break
             # 2) Deflation (in place)
             # ----------------------
@@ -196,6 +195,7 @@ class _PLS:
             # - subtract rank-one approximations to obtain remainder matrix
             # Xk -= np.dot(x_scores, x_loadings.T)
             Xk -= tf.matmul(x_scores, tf.transpose(x_loadings))
+            y_loadings = []
             if self.deflation_mode == "canonical":
                 # - regress Yk's on y_score, then subtract rank-one approx.
                 y_loadings = np.dot(Yk.T, y_scores) / np.dot(y_scores.T, y_scores)
@@ -223,54 +223,26 @@ class _PLS:
             #             y_weights = tf.dtypes.cast(y_weights,tf.float32)
             #             x_loadings = tf.dtypes.cast(x_loadings,tf.float32)
             #             y_loadings = tf.dtypes.cast(y_loadings,tf.float32)
-            #self.x_scores_.append(x_scores)
-            #self.y_scores_.append(y_scores)
-            #self.x_weights_.append(x_weights)
-            #self.y_weights_.append(y_weights)
-            #self.x_loadings_.append(x_loadings)
-            #self.y_loadings_.append(y_loadings)
-            x_scores = tf.cast(x_scores,dtype=tf.float32)
-            y_scores = tf.cast(y_scores,dtype=tf.float32)
-            x_weights = tf.cast(x_weights,dtype=tf.float32)
-            x_loadings = tf.cast(x_loadings,dtype=tf.float32)
-            y_weights = tf.cast(y_weights,dtype=tf.float32)
-            y_loadings = tf.cast(y_loadings,dtype=tf.float32)
-            
-            for i in range(n):
-                self.x_scores_ = tf.compat.v2.tensor_scatter_nd_add(self.x_scores_, tf.constant([[i,k]]),x_scores[i])
-                self.y_scores_ = tf.compat.v2.tensor_scatter_nd_add(self.y_scores_, tf.constant([[i,k]]),x_scores[i])
-            #for i in range (p):
-                if i < p:
-                    self.x_weights_ = tf.compat.v2.tensor_scatter_nd_add(self.x_weights_, tf.constant([[i,k]]),x_weights[i])
-                    self.x_loadings_ = tf.compat.v2.tensor_scatter_nd_add(self.x_loadings_, tf.constant([[i,k]]),x_loadings[i])
-            #for i in range(q):
-                if i < q:
-                    self.y_weights_ = tf.compat.v2.tensor_scatter_nd_add(self.y_weights_, tf.constant([[i,k]]),y_weights[i])
-                    self.y_loadings_ = tf.compat.v2.tensor_scatter_nd_add(self.y_loadings_, tf.constant([[i,k]]),y_loadings[i])
-
+            self.x_scores_.append(x_scores)
+            self.y_scores_.append(y_scores)
+            self.x_weights_.append(x_weights)
+            self.y_weights_.append(y_weights)
+            self.x_loadings_.append(x_loadings)
+            self.y_loadings_.append(y_loadings)
         # Such that: X = TP' + Err and Y = UQ' + Err
-        #self.x_scores_ = tf.stack(self.x_scores_, axis=1)
-        #self.x_scores_ = tf.reshape(self.x_scores_, shape=self.x_scores_.shape[:2])
-        #self.y_scores_ = tf.stack(self.y_scores_, axis=1)
-        #self.y_scores_ = tf.reshape(self.y_scores_, shape=self.y_scores_.shape[:2])
-        #self.x_weights_ = tf.stack(self.x_weights_, axis=1)
-        #self.x_weights_ = tf.reshape(self.x_weights_, shape=self.x_weights_.shape[:2])
-        #self.y_weights_ = tf.stack(self.y_weights_, axis=1)
-        #self.y_weights_ = tf.reshape(self.y_weights_, shape=self.y_weights_.shape[:2])
-        #self.x_loadings_ = tf.stack(self.x_loadings_, axis=1)
-        #self.x_loadings_ = tf.reshape(self.x_loadings_, shape=self.x_loadings_.shape[:2])
-        #self.y_loadings_ = tf.stack(self.y_loadings_, axis=1)
-        #self.y_loadings_ = tf.reshape(self.y_loadings_, shape=self.y_loadings_.shape[:2])
-        
-        #assert x_scores_test.shape == self.x_scores_.shape, "shape problem"
-        #assert y_scores_test.shape == self.y_scores_.shape, "shape problem"
-        
-        #assert x_loadings_test.shape == self.x_loadings_.shape, "shape problem"
-        #assert y_loadings_test.shape == self.y_loadings_ .shape, "shape problem"
-        
-        #assert x_weights_test.shape == self.x_weights_.shape, "shape problem"
-        #assert y_weights_test.shape == self.y_weights_.shape, "shape problem"
-        
+        self.x_scores_ = tf.stack(self.x_scores_, axis=1)
+        self.x_scores_ = tf.reshape(self.x_scores_, shape=self.x_scores_.shape[:2])
+        self.y_scores_ = tf.stack(self.y_scores_, axis=1)
+        self.y_scores_ = tf.reshape(self.y_scores_, shape=self.y_scores_.shape[:2])
+        self.x_weights_ = tf.stack(self.x_weights_, axis=1)
+        self.x_weights_ = tf.reshape(self.x_weights_, shape=self.x_weights_.shape[:2])
+        self.y_weights_ = tf.stack(self.y_weights_, axis=1)
+        self.y_weights_ = tf.reshape(self.y_weights_, shape=self.y_weights_.shape[:2])
+        self.x_loadings_ = tf.stack(self.x_loadings_, axis=1)
+        self.x_loadings_ = tf.reshape(self.x_loadings_, shape=self.x_loadings_.shape[:2])
+        self.y_loadings_ = tf.stack(self.y_loadings_, axis=1)
+        self.y_loadings_ = tf.reshape(self.y_loadings_, shape=self.y_loadings_.shape[:2])
+
         # 4) rotations from input space to transformed space (scores)
         # T = X W(P'W)^-1 = XW* (W* : p x k matrix)
         # U = Y C(Q'C)^-1 = YC* (W* : q x k matrix)
@@ -278,9 +250,7 @@ class _PLS:
             self.x_weights_,
             tfp.math.pinv(tf.matmul(tf.transpose(self.x_loadings_), self.x_weights_)),
         )
-        self.x_rotations_ = tf.cast(self.x_rotations_,dtype=tf.float32)
-        self.y_loadings_ = tf.cast(self.y_loadings_,dtype=tf.float32)
-    
+
         if Y.shape[1] > 1:
             self.y_rotations_ = np.dot(
                 self.y_weights_,
@@ -298,9 +268,7 @@ class _PLS:
             # Y = X W(P'W)^-1Q' + Err = XB + Err
             # => B = W*Q' (p x q)
             self.coef_ = tf.matmul(self.x_rotations_, tf.transpose(self.y_loadings_))
-            
-            self.y_std_ = tf.cast(self.y_std_,dtype=tf.float32)
-            self.coef_ = tf.cast(self.coef_,dtype=tf.float32)
+
             self.coef_ = self.coef_ * self.y_std_
         return self
 
