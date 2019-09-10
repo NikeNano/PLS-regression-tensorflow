@@ -4,7 +4,7 @@ import tensorflow_probability as tfp
 # from utils import check_is_fitted
 from abc import ABCMeta, abstractmethod
 
-@tf.function
+#@tf.function
 def _nipals_tensorflow(
     X: tf.Tensor, Y: tf.Tensor, max_iter=500, tol=1e-06, norm_y_weights: bool = False
 ):
