@@ -9,11 +9,16 @@ Install last release candidate for TensorFlow 2.0
 
 ## TODOs
 
-* Graph structure
-* No lists
-* Tensorboard
-* Update performance test
-* Investigate the need for also implementing numeric solution as option.
+* Look over the structure and ensure we have a tensorflow approach
+* Make the code follow the graph structure of tensorflow 
+* Replace the use of lists to tensorflow operations instead
+* Implement logging of the traning and paramters in tensorboard
+* Update performance test, today it is not complete. Should we look at GPU, tests aswell
+* Update all functions to use tf.functions
+* Investigate the need for implementing numeric solution as option. Can we build a gradient descent solution for PLS? 
+* Should we look at tensorflow serving with our model to test it out? 
+* Implement test(pytest?) for all functions
+* Make sure that the PLS can be saved and loaded correctly, should we use tf.savedmodel or pickle? 
 * Add more regression algorithms
 
 ## Release History
@@ -24,7 +29,6 @@ Install last release candidate for TensorFlow 2.0
 
 Distributed under the MIT license. See ``LICENSE`` for more information.
 
-[https://github.com/jiwidi/DailyQwertee](https://github.com/jiwidi/)
 
 ## Contributors
 [https://github.com/NikeNano](https://github.com/NikeNano)
