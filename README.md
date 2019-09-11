@@ -8,7 +8,13 @@ Install last release candidate for TensorFlow 2.0
 `pip install tensorflow==2.0.0-rc0`
 
 ## TODOs
-* To write the list of TODOs
+
+* Graph structure
+* No lists
+* Tensorboard
+* Update performance test
+* Investigate the need for also implementing numeric solution as option.
+* Add more regression algorithms
 
 ## Release History
 * 0.0.1
